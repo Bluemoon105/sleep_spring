@@ -1,34 +1,22 @@
 package com.example.sleep.model;
 
-import jakarta.persistence.*;
-import lombok.*;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "users")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class User {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    private String name;  // VARCHAR(50)
-
-    // 'M' or 'F' 로 저장됨 → char(1)
-    @Column(length = 1)
+    private String name;
     private String gender;
-
-    @Column(name = "birth_date", nullable = false)
     private LocalDate birthDate;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    private String username;
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public String getGender() { return gender; }
+    public void setGender(String gender) { this.gender = gender; }
+
+    public LocalDate getBirthDate() { return birthDate; }
+    public void setBirthDate(LocalDate birthDate) { this.birthDate = birthDate; }
 }

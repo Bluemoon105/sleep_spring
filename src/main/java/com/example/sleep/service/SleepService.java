@@ -1,9 +1,9 @@
 package com.example.sleep.service;
 
 import com.example.sleep.dto.UserInputRequest;
-import com.example.sleep.model.SleepData;   // 네 프로젝트 패키지 맞춰라
-import com.example.sleep.model.User;       // 네 프로젝트 패키지 맞춰라
-import com.example.sleep.repository.SleepRepository;
+import com.example.sleep.mapper.SleepMapper;
+import com.example.sleep.model.SleepData;
+import com.example.sleep.model.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
@@ -16,28 +16,26 @@ import java.util.Map;
 @Service
 public class SleepService {
 
-    private final SleepRepository sleepRepository;
+    private final SleepMapper sleepMapper;
     private final UserService userService;
     private final WebClient webClient;
 
     public SleepService(
-            SleepRepository sleepRepository,
+            SleepMapper sleepMapper,
             UserService userService,
             @Value("${fastapi.base-url}") String fastApiBaseUrl
     ) {
-        this.sleepRepository = sleepRepository;
+        this.sleepMapper = sleepMapper;
         this.userService = userService;
         this.webClient = WebClient.builder()
                 .baseUrl(fastApiBaseUrl)
                 .build();
     }
 
-    /**
-     * 1차 저장: 프론트에서 받은 입력을 daily_activities에 우선 저장
-     */
+    /** 1) 1차 저장 **/
     public SleepData saveInitialRecord(UserInputRequest input) {
         SleepData record = new SleepData();
-        record.setUserId(input.getUserId()); // SleepData가 int면 캐스팅
+        record.setUserId(input.getUserId());
         record.setDate(LocalDate.now());
         record.setSleepHours(input.getSleepHours());
         record.setCaffeineMg(input.getCaffeineMg());
@@ -45,19 +43,16 @@ public class SleepService {
         record.setPhysicalActivityHours(input.getPhysicalActivityHours());
         record.setCreatedAt(LocalDateTime.now());
         record.setUpdatedAt(LocalDateTime.now());
-        // 예측 필드는 아직 비워둔다
-        return sleepRepository.save(record);
+
+        sleepMapper.insert(record);
+        return record;
     }
 
-    /**
-     * FastAPI: 피로도 예측 호출 후 daily_activities의 관련 칼럼 업데이트
-     * 업데이트되는 컬럼: predicted_sleep_quality, predicted_fatigue_score, condition_level
-     */
+    /** 2) 피로도 예측 **/
     public SleepData updateFatiguePrediction(SleepData record) {
-        // 사용자 기본정보 조회
-        User user = userService.getUserById(record.getUserId().longValue());
+        User user = userService.getUserById(record.getUserId());
         int age = userService.calculateAge(user.getBirthDate());
-        int genderInt = userService.toGenderInt(user.getGender()); // "M"/"F" -> 1/0
+        int genderInt = userService.toGenderInt(user.getGender());
 
         Map<String, Object> body = Map.of(
                 "age", age,
@@ -75,32 +70,23 @@ public class SleepService {
                 .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
                 .block();
 
-        if (resp == null) {
-            throw new IllegalStateException("FastAPI returned null for predict-fatigue");
-        }
+        if (resp == null) throw new IllegalStateException("FastAPI returned null");
 
-        // FastAPI 응답 키 이름에 맞춰 매핑
-        // 예: {predicted_sleep_quality: 3.0, predicted_fatigue_score: 33.33, condition_level: "보통"}
-        if (resp.get("predicted_sleep_quality") != null) {
+        if (resp.get("predicted_sleep_quality") != null)
             record.setPredictedSleepQuality(((Number) resp.get("predicted_sleep_quality")).doubleValue());
-        }
-        if (resp.get("predicted_fatigue_score") != null) {
+        if (resp.get("predicted_fatigue_score") != null)
             record.setPredictedFatigueScore(((Number) resp.get("predicted_fatigue_score")).doubleValue());
-        }
-        if (resp.get("condition_level") != null) {
+        if (resp.get("condition_level") != null)
             record.setConditionLevel((String) resp.get("condition_level"));
-        }
 
         record.setUpdatedAt(LocalDateTime.now());
-        return sleepRepository.save(record);
+        sleepMapper.updateFatigue(record);
+        return record;
     }
 
-    /**
-     * FastAPI: 개인 최적 수면시간 예측 호출 후 daily_activities의 recommended_sleep_range 업데이트
-     * 업데이트되는 컬럼: recommended_sleep_range
-     */
+    /** 3) 개인 최적 수면시간 예측 **/
     public SleepData updateOptimalSleepRange(SleepData record) {
-        User user = userService.getUserById(record.getUserId().longValue());
+        User user = userService.getUserById(record.getUserId());
         int age = userService.calculateAge(user.getBirthDate());
         int genderInt = userService.toGenderInt(user.getGender());
 
@@ -120,16 +106,19 @@ public class SleepService {
                 .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
                 .block();
 
-        if (resp == null) {
-            throw new IllegalStateException("FastAPI returned null for predict-optimal-hours");
-        }
+        if (resp == null) throw new IllegalStateException("FastAPI returned null");
 
-        // FastAPI 응답 예: { recommended_sleep_range: "7.0 ~ 7.5 시간" }
-        if (resp.get("recommended_sleep_range") != null) {
+        if (resp.get("recommended_sleep_range") != null)
             record.setRecommendedSleepRange((String) resp.get("recommended_sleep_range"));
-        }
 
         record.setUpdatedAt(LocalDateTime.now());
-        return sleepRepository.save(record);
+        sleepMapper.updateOptimal(record);
+        return record;
+    }
+
+    /** 4) ID로 조회 **/
+    public SleepData findById(Long id) {
+        return sleepMapper.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Record not found: " + id));
     }
 }

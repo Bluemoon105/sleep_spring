@@ -8,17 +8,12 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/sleepdb
     username: postgres
-    password: ?
+    password: "0411"
     driver-class-name: org.postgresql.Driver
 
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.example.sleep.model
 
 # FastAPI 서버 연결 설정
 fastapi:

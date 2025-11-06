@@ -1,0 +1,7 @@
+<mapper namespace="com.example.sleep.mapper.UserMapper">
+
+    <select id="findById" parameterType="long" resultType="com.example.sleep.model.User">
+        SELECT * FROM users WHERE id = #{id}
+    </select>
+
+</mapper>

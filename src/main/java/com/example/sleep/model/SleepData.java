@@ -1,52 +1,34 @@
 package com.example.sleep.model;
 
-import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "daily_activities")
+/**
+ * MyBatis용 SleepData DTO
+ * JPA 어노테이션(@Entity, @Table, @Column 등) 제거
+ * 테이블명: daily_activities
+ */
 public class SleepData {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "user_id")
     private Long userId;
-
-    @Column(name = "date")
     private LocalDate date;
-
-    @Column(name = "sleep_hours")
     private Double sleepHours;
-
-    @Column(name = "caffeine_mg")
     private Double caffeineMg;
-
-    @Column(name = "alcohol_consumption")
     private Double alcoholConsumption;
-
-    @Column(name = "physical_activity_hours")
     private Double physicalActivityHours;
-
-    @Column(name = "predicted_sleep_quality")
     private Double predictedSleepQuality;
-
-    @Column(name = "predicted_fatigue_score")
     private Double predictedFatigueScore;
-
-    @Column(name = "recommended_sleep_range")
     private String recommendedSleepRange;
-
-    @Column(name = "condition_level")
     private String conditionLevel;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt = LocalDateTime.now();
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    // 기본 생성자
+    public SleepData() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
 
     // ----- Getter / Setter -----
     public Long getId() {

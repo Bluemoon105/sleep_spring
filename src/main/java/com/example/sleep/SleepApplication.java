@@ -4,8 +4,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class SleepSpringApplication {
+public class SleepApplication {
     public static void main(String[] args) {
-        SpringApplication.run(SleepSpringApplication.class, args);
+        SpringApplication.run(SleepApplication.class, args);
     }
 }

@@ -8,7 +8,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/sleepdb
     username: postgres
-    password: "0411"
+    password: ?
     driver-class-name: org.postgresql.Driver
 
   jpa:

@@ -11,16 +11,21 @@ spring:
     password: "0411"
     driver-class-name: org.postgresql.Driver
 
-  # MyBatis 설정
-  mybatis:
-    mapper-locations: classpath:mapper/**/*.xml   # 매퍼 XML 파일 경로
-    type-aliases-package: com.example.sleep.model  # DTO/VO/Entity 패키지 경로
-    configuration:
-      map-underscore-to-camel-case: true          # DB 칼럼명 → camelCase 매핑
-      cache-enabled: false
-      lazy-loading-enabled: true
-      aggressive-lazy-loading: false
-      default-statement-timeout: 30
+# MyBatis 설정
+mybatis:
+  mapper-locations: classpath:mapper/*.xml   # 매퍼 XML 파일 경로
+  type-aliases-package: com.example.sleep.model  # DTO/VO/Entity 패키지 경로
+  configuration:
+    map-underscore-to-camel-case: true          # DB 칼럼명 → camelCase 매핑
+    cache-enabled: false
+    lazy-loading-enabled: true
+    aggressive-lazy-loading: false
+    default-statement-timeout: 30
+
+logging:
+  level:
+    org.mybatis: DEBUG
+    com.example.sleep: TRACE
 
 # FastAPI 서버 연결 설정
 fastapi:

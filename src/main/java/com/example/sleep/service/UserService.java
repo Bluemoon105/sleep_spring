@@ -16,9 +16,9 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    public User getUserById(String userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+    public User getUserById(Long memberNo) {
+        return userRepository.findById(memberNo)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + memberNo));
     }
 
     public int calculateAge(LocalDate birthDate) {
@@ -26,8 +26,9 @@ public class UserService {
         return Period.between(birthDate, LocalDate.now()).getYears();
     }
 
-    public int toGenderInt(String genderChar) {
-        if (genderChar == null) return 0;
-        return "M".equalsIgnoreCase(genderChar) ? 0 : 1;
+    // ✅ enum 타입에 맞게 수정
+    public int toGenderInt(User.Gender genderEnum) {
+        if (genderEnum == null) return 0;
+        return (genderEnum == User.Gender.M) ? 0 : 1;
     }
 }

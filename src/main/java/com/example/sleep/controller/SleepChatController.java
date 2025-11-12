@@ -15,39 +15,44 @@ public class SleepChatController {
         this.llmService = llmService;
     }
 
+    /** 채팅 입력 폼 */
     @GetMapping("/form")
     public String chatForm() {
         return "chat/form";
     }
 
+    /** 일반 대화 요청 */
     @PostMapping("/message")
-    public String chat(@RequestParam("user_id") String userId,
+    public String chat(@RequestParam("member_no") Long memberNo,
                        @RequestParam("message") String message,
                        Model model) {
-        String response = llmService.chatGeneral(userId, message);
-        model.addAttribute("userId", userId);
+        String response = llmService.chatGeneral(memberNo, message);
+        model.addAttribute("memberNo", memberNo);
         model.addAttribute("message", message);
         model.addAttribute("response", response);
         return "chat/result";
     }
 
-    @GetMapping("/report/daily/{userId}")
-    public String dailyReport(@PathVariable String userId, Model model) {
-        String report = llmService.getDailyReport(userId);
+    /** 일간 리포트 */
+    @GetMapping("/report/daily/{memberNo}")
+    public String dailyReport(@PathVariable Long memberNo, Model model) {
+        String report = llmService.getDailyReport(memberNo);
         model.addAttribute("report", report);
         return "chat/dailyReport";
     }
 
-    @GetMapping("/report/weekly/{userId}")
-    public String weeklyReport(@PathVariable String userId, Model model) {
-        String report = llmService.getWeeklyReport(userId);
+    /** 주간 리포트 */
+    @GetMapping("/report/weekly/{memberNo}")
+    public String weeklyReport(@PathVariable Long memberNo, Model model) {
+        String report = llmService.getWeeklyReport(memberNo);
         model.addAttribute("report", report);
         return "chat/weeklyReport";
     }
 
-    @GetMapping("/history/{userId}")
-    public String history(@PathVariable String userId, Model model) {
-        model.addAttribute("history", llmService.getChatHistory(userId));
+    /** 대화 기록 */
+    @GetMapping("/history/{memberNo}")
+    public String history(@PathVariable Long memberNo, Model model) {
+        model.addAttribute("history", llmService.getChatHistory(memberNo));
         return "chat/history";
     }
 }

@@ -19,11 +19,13 @@ public class SleepController {
         this.sleepService = sleepService;
     }
 
+    /** 활동 데이터 입력 폼 */
     @GetMapping("/form")
     public String showForm() {
         return "sleep/form";
     }
 
+    /** 활동량 저장 */
     @PostMapping("/activities")
     public String saveActivity(@ModelAttribute UserInputRequest input, Model model) {
         try {
@@ -40,9 +42,10 @@ public class SleepController {
         return "sleep/result";
     }
 
+    /** 피로도 예측 */
     @GetMapping("/predict-fatigue")
-    public String predictFatigue(@RequestParam("userId") String userId, Model model) {
-        SleepData todayRecord = sleepService.findTodayRecord(userId, LocalDate.now());
+    public String predictFatigue(@RequestParam("member_no") Long memberNo, Model model) {
+        SleepData todayRecord = sleepService.findTodayRecord(memberNo, LocalDate.now());
         if (todayRecord == null) {
             model.addAttribute("message", "오늘 입력된 데이터가 없습니다.");
             return "sleep/result";
@@ -53,9 +56,10 @@ public class SleepController {
         return "sleep/result";
     }
 
+    /** 최적 수면시간 예측 */
     @GetMapping("/predict-sleephours")
-    public String predictSleepHours(@RequestParam("userId") String userId, Model model) {
-        SleepData todayRecord = sleepService.findTodayRecord(userId, LocalDate.now());
+    public String predictSleepHours(@RequestParam("member_no") Long memberNo, Model model) {
+        SleepData todayRecord = sleepService.findTodayRecord(memberNo, LocalDate.now());
         if (todayRecord == null) {
             model.addAttribute("message", "오늘 입력된 데이터가 없습니다.");
             return "sleep/result";
@@ -66,9 +70,10 @@ public class SleepController {
         return "sleep/result";
     }
 
+    /** 최근 7일 기록 조회 */
     @GetMapping("/recent")
-    public String showRecent(@RequestParam("userId") String userId, Model model) {
-        model.addAttribute("list", sleepService.getRecentSleepHours(userId));
+    public String showRecent(@RequestParam("member_no") Long memberNo, Model model) {
+        model.addAttribute("list", sleepService.getRecentSleepHours(memberNo));
         return "sleep/recent";
     }
 }

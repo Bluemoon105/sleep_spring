@@ -4,7 +4,6 @@ import com.example.sleep.dto.UserInputRequest;
 import com.example.sleep.model.SleepData;
 import com.example.sleep.model.User;
 import com.example.sleep.repository.SleepDataRepository;
-import com.example.sleep.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -35,16 +34,16 @@ public class SleepService {
 
     /** 1️⃣ 활동 데이터 저장 (하루 1회 제한) **/
     public SleepData saveInitialRecord(UserInputRequest input) {
-        String userId = input.getUserId();
+        Long memberNo = input.getMemberNo();
         LocalDate today = LocalDate.now();
 
-        boolean existsToday = sleepDataRepository.existsByUserIdAndDate(userId, today);
+        boolean existsToday = sleepDataRepository.existsByMemberNoAndDate(memberNo, today);
         if (existsToday) {
             throw new IllegalStateException("오늘은 이미 활동량이 등록되었습니다.");
         }
 
         SleepData record = new SleepData();
-        record.setUserId(userId);
+        record.setMemberNo(memberNo);
         record.setDate(today);
         record.setSleepHours(input.getSleepHours());
         record.setCaffeineMg(input.getCaffeineMg());
@@ -57,13 +56,13 @@ public class SleepService {
     }
 
     /** 2️⃣ 오늘 데이터 조회 **/
-    public SleepData findTodayRecord(String userId, LocalDate date) {
-        return sleepDataRepository.findByUserIdAndDate(userId, date).orElse(null);
+    public SleepData findTodayRecord(Long memberNo, LocalDate date) {
+        return sleepDataRepository.findByMemberNoAndDate(memberNo, date).orElse(null);
     }
 
     /** 3️⃣ 피로도 예측 **/
     public SleepData updateFatiguePrediction(SleepData record) {
-        User user = userService.getUserById(record.getUserId());
+        User user = userService.getUserById(record.getMemberNo());
         int age = userService.calculateAge(user.getBirthDate());
         int genderInt = userService.toGenderInt(user.getGender());
 
@@ -87,7 +86,7 @@ public class SleepService {
         );
 
         Map<String, Object> resp = response.getBody();
-        if (resp == null) throw new IllegalStateException("FastAPI returned null");
+        if (resp == null) throw new IllegalStateException("FastAPI 응답이 비어 있습니다.");
 
         record.setPredictedSleepQuality(
                 ((Number) resp.getOrDefault("predicted_sleep_quality", 0)).doubleValue()
@@ -103,7 +102,7 @@ public class SleepService {
 
     /** 4️⃣ 개인 최적 수면시간 예측 **/
     public SleepData updateOptimalSleepRange(SleepData record) {
-        User user = userService.getUserById(record.getUserId());
+        User user = userService.getUserById(record.getMemberNo());
         int age = userService.calculateAge(user.getBirthDate());
         int genderInt = userService.toGenderInt(user.getGender());
 
@@ -127,7 +126,7 @@ public class SleepService {
         );
 
         Map<String, Object> resp = response.getBody();
-        if (resp == null) throw new IllegalStateException("FastAPI returned null");
+        if (resp == null) throw new IllegalStateException("FastAPI 응답이 비어 있습니다.");
 
         record.setRecommendedSleepRange(
                 (String) resp.getOrDefault("recommended_sleep_range", "7시간")
@@ -138,8 +137,8 @@ public class SleepService {
     }
 
     /** 5️⃣ 최근 7일 기록 **/
-    public List<SleepData> getRecentSleepHours(String userId) {
-        List<SleepData> list = sleepDataRepository.findTop7ByUserIdOrderByDateDesc(userId);
+    public List<SleepData> getRecentSleepHours(Long memberNo) {
+        List<SleepData> list = sleepDataRepository.findTop7ByMemberNoOrderByDateDesc(memberNo);
         Collections.reverse(list);
         return list;
     }

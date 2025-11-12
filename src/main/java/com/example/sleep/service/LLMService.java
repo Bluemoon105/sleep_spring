@@ -1,4 +1,4 @@
-package com.app.medibear.service;
+package com.example.sleep.service;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -8,16 +8,16 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.util.Map;
 
 @Service
-public class SleepLLMService {
+public class LLMService {
 
     private final WebClient webClient;
 
-    public SleepLLMService(@Value("${cors.fastapi.url}") String baseUrl, WebClient.Builder builder) {
+    public LLMService(@Value("${fastapi.base-url}") String baseUrl, WebClient.Builder builder) {
         this.webClient = builder.baseUrl(baseUrl).build();
     }
 
     //일반 대화
-    public String chatGeneral(String userId, String message) {
+    public String chatGeneral(Long userId, String message) {
         Map<String, Object> body = Map.of(
             "user_id", userId,
             "message", message
@@ -37,7 +37,7 @@ public class SleepLLMService {
     }
 
     //일간 리포트
-    public String getDailyReport(String userId) {
+    public String getDailyReport(Long userId) {
         Map<String, Object> resp = webClient.get()
                 .uri("/sleepchat/report/daily/" + userId)
                 .retrieve()
@@ -51,7 +51,7 @@ public class SleepLLMService {
     }
 
     //주간 리포트
-    public String getWeeklyReport(String userId) {
+    public String getWeeklyReport(Long userId) {
         Map<String, Object> resp = webClient.get()
                 .uri("/sleepchat/report/weekly/" + userId)
                 .retrieve()
@@ -65,7 +65,7 @@ public class SleepLLMService {
     }
 
     //대화 기록
-    public Map<String, Object> getChatHistory(String userId) {
+    public Map<String, Object> getChatHistory(Long userId) {
         return webClient.get()
                 .uri("/sleepchat/history/" + userId)
                 .retrieve()

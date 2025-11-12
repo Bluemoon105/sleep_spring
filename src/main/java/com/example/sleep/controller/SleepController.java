@@ -1,9 +1,8 @@
-package com.example.sleep.controller;
+package com.app.medibear.controller;
 
-import com.example.sleep.dto.UserInputRequest;
-import com.example.sleep.model.SleepData;  // 네 프로젝트 패키지 맞춰라
-import com.example.sleep.service.SleepService;
-import com.example.sleep.repository.SleepRepository;
+import com.app.medibear.model.SleepData;  // 네 프로젝트 패키지 맞춰라
+import com.app.medibear.service.SleepService;
+import com.app.medibear.repository.SleepRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

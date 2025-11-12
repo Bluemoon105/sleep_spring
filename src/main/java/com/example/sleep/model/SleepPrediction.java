@@ -11,8 +11,9 @@ public class SleepPrediction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id")
-    private Long userId;
+    // ✅ userId를 문자열로 변경
+    @Column(name = "user_id", nullable = false, length = 50)
+    private String userId;
 
     @Column(name = "recommended_sleep_hours")
     private Double recommendedSleepHours;
@@ -20,22 +21,47 @@ public class SleepPrediction {
     @Column(name = "confidence")
     private Double confidence;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
-    // Getter & Setter
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    // 기본 생성자
+    public SleepPrediction() {
+        this.createdAt = LocalDateTime.now();
+    }
 
-    public Long getUserId() { return userId; }
-    public void setUserId(Long userId) { this.userId = userId; }
+    // ----- Getter & Setter -----
+    public Long getId() {
+        return id;
+    }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public Double getRecommendedSleepHours() { return recommendedSleepHours; }
-    public void setRecommendedSleepHours(Double recommendedSleepHours) { this.recommendedSleepHours = recommendedSleepHours; }
+    public String getUserId() {
+        return userId;
+    }
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
 
-    public Double getConfidence() { return confidence; }
-    public void setConfidence(Double confidence) { this.confidence = confidence; }
+    public Double getRecommendedSleepHours() {
+        return recommendedSleepHours;
+    }
+    public void setRecommendedSleepHours(Double recommendedSleepHours) {
+        this.recommendedSleepHours = recommendedSleepHours;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public Double getConfidence() {
+        return confidence;
+    }
+    public void setConfidence(Double confidence) {
+        this.confidence = confidence;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }

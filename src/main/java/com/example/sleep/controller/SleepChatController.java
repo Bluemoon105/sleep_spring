@@ -1,6 +1,6 @@
-package com.example.sleep.controller;
+package com.app.medibear.controller;
 
-import com.example.sleep.service.LLMService;
+import com.app.medibear.service.LLMService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

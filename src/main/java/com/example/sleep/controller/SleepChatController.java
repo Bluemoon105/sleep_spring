@@ -1,61 +1,53 @@
-package com.app.medibear.controller;
+package com.example.sleep.controller;
 
-import com.app.medibear.service.LLMService;
-import org.springframework.http.ResponseEntity;
+import com.example.sleep.service.SleepLLMService;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
-@RestController
+@Controller
 @RequestMapping("/chat")
 public class SleepChatController {
 
-    private final LLMService llmService;
+    private final SleepLLMService llmService;
 
-    public SleepChatController(LLMService llmService) {
+    public SleepChatController(SleepLLMService llmService) {
         this.llmService = llmService;
     }
 
-    /**
-     * 일반 대화 (LLM)
-     * POST /chat/message
-     */
+    @GetMapping("/form")
+    public String chatForm() {
+        return "chat/form";
+    }
+
     @PostMapping("/message")
-    public ResponseEntity<Map<String, Object>> chat(@RequestBody Map<String, Object> body) {
-        String userId = (String) body.get("user_id");
-        String message = (String) body.get("message");
-
+    public String chat(@RequestParam("user_id") String userId,
+                       @RequestParam("message") String message,
+                       Model model) {
         String response = llmService.chatGeneral(userId, message);
-        return ResponseEntity.ok(Map.of("response", response));
+        model.addAttribute("userId", userId);
+        model.addAttribute("message", message);
+        model.addAttribute("response", response);
+        return "chat/result";
     }
 
-    /**
-     * 일간 리포트
-     * GET /chat/report/daily/{userId}
-     */
     @GetMapping("/report/daily/{userId}")
-    public ResponseEntity<Map<String, Object>> dailyReport(@PathVariable("userId") String userId) {
+    public String dailyReport(@PathVariable String userId, Model model) {
         String report = llmService.getDailyReport(userId);
-        return ResponseEntity.ok(Map.of("report", report));
+        model.addAttribute("report", report);
+        return "chat/dailyReport";
     }
 
-    /**
-     * 주간 리포트
-     * GET /chat/report/weekly/{userId}
-     */
     @GetMapping("/report/weekly/{userId}")
-    public ResponseEntity<Map<String, Object>> weeklyReport(@PathVariable("userId") String userId) {
+    public String weeklyReport(@PathVariable String userId, Model model) {
         String report = llmService.getWeeklyReport(userId);
-        return ResponseEntity.ok(Map.of("report", report));
+        model.addAttribute("report", report);
+        return "chat/weeklyReport";
     }
 
-    /**
-     * 대화 기록 조회
-     * GET /chat/history/{userId}
-     */
     @GetMapping("/history/{userId}")
-    public ResponseEntity<Map<String, Object>> history(@PathVariable("userId") String userId) {
-        Map<String, Object> history = llmService.getChatHistory(userId);
-        return ResponseEntity.ok(history);
+    public String history(@PathVariable String userId, Model model) {
+        model.addAttribute("history", llmService.getChatHistory(userId));
+        return "chat/history";
     }
 }

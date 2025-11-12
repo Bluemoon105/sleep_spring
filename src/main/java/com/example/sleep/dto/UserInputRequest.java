@@ -1,14 +1,52 @@
 package com.example.sleep.dto;
 
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+@Entity
+@Table(name = "user_input_requests")
 @Getter
 @Setter
 public class UserInputRequest {
-    private String userId;                   // 프론트에서 전달하는 로그인 사용자 ID
-    private Double sleepHours;             // 수면 시간
-    private Double caffeineMg;             // 카페인 섭취량
-    private Double alcoholConsumption;     // 알코올 섭취량
-    private Double physicalActivityHours;  // 신체활동 시간
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "user_id", nullable = false, length = 50)
+    private String userId; // 로그인 사용자 ID
+
+    @Column(name = "sleep_hours")
+    private Double sleepHours; // 수면 시간
+
+    @Column(name = "caffeine_mg")
+    private Double caffeineMg; // 카페인 섭취량
+
+    @Column(name = "alcohol_consumption")
+    private Double alcoholConsumption; // 알코올 섭취량
+
+    @Column(name = "physical_activity_hours")
+    private Double physicalActivityHours; // 신체활동 시간
 }
+
+//배포 db ver
+//package com.example.sleep.dto;
+//
+//import lombok.Getter;
+//import lombok.Setter;
+//
+//@Getter
+//@Setter
+//public class UserInputRequest {
+//
+//    private Long memberNo;                 // ✅ 회원 고유번호 (member_tb.member_no 참조)
+//
+//    private Double sleepHours;             // 수면 시간
+//
+//    private Double caffeineMg;             // 카페인 섭취량
+//
+//    private Double alcoholConsumption;     // 알코올 섭취량
+//
+//    private Double physicalActivityHours;  // 신체활동 시간
+//}

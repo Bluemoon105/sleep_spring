@@ -1,63 +1,71 @@
 package com.example.sleep.service;
 
 import com.example.sleep.dto.UserInputRequest;
-import com.example.sleep.model.SleepData;   // 네 프로젝트 패키지 맞춰라
-import com.example.sleep.model.User;       // 네 프로젝트 패키지 맞춰라
-import com.example.sleep.repository.SleepRepository;
+import com.example.sleep.model.SleepData;
+import com.example.sleep.model.User;
+import com.example.sleep.repository.SleepDataRepository;
+import com.example.sleep.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class SleepService {
 
-    private final SleepRepository sleepRepository;
+    private final SleepDataRepository sleepDataRepository;
     private final UserService userService;
-    private final WebClient webClient;
+    private final RestTemplate restTemplate;
+    private final String fastApiBaseUrl;
 
     public SleepService(
-            SleepRepository sleepRepository,
+            SleepDataRepository sleepDataRepository,
             UserService userService,
             @Value("${fastapi.base-url}") String fastApiBaseUrl
     ) {
-        this.sleepRepository = sleepRepository;
+        this.sleepDataRepository = sleepDataRepository;
         this.userService = userService;
-        this.webClient = WebClient.builder()
-                .baseUrl(fastApiBaseUrl)
-                .build();
+        this.restTemplate = new RestTemplate();
+        this.fastApiBaseUrl = fastApiBaseUrl;
     }
 
-    /**
-     * 1차 저장: 프론트에서 받은 입력을 daily_activities에 우선 저장
-     */
+    /** 1️⃣ 활동 데이터 저장 (하루 1회 제한) **/
     public SleepData saveInitialRecord(UserInputRequest input) {
+        String userId = input.getUserId();
+        LocalDate today = LocalDate.now();
+
+        boolean existsToday = sleepDataRepository.existsByUserIdAndDate(userId, today);
+        if (existsToday) {
+            throw new IllegalStateException("오늘은 이미 활동량이 등록되었습니다.");
+        }
+
         SleepData record = new SleepData();
-        record.setUserId(input.getUserId()); // SleepData가 int면 캐스팅
-        record.setDate(LocalDate.now());
+        record.setUserId(userId);
+        record.setDate(today);
         record.setSleepHours(input.getSleepHours());
         record.setCaffeineMg(input.getCaffeineMg());
         record.setAlcoholConsumption(input.getAlcoholConsumption());
         record.setPhysicalActivityHours(input.getPhysicalActivityHours());
         record.setCreatedAt(LocalDateTime.now());
         record.setUpdatedAt(LocalDateTime.now());
-        // 예측 필드는 아직 비워둔다
-        return sleepRepository.save(record);
+
+        return sleepDataRepository.save(record);
     }
 
-    /**
-     * FastAPI: 피로도 예측 호출 후 daily_activities의 관련 칼럼 업데이트
-     * 업데이트되는 컬럼: predicted_sleep_quality, predicted_fatigue_score, condition_level
-     */
+    /** 2️⃣ 오늘 데이터 조회 **/
+    public SleepData findTodayRecord(String userId, LocalDate date) {
+        return sleepDataRepository.findByUserIdAndDate(userId, date).orElse(null);
+    }
+
+    /** 3️⃣ 피로도 예측 **/
     public SleepData updateFatiguePrediction(SleepData record) {
-        // 사용자 기본정보 조회
-        User user = userService.getUserById(record.getUserId().longValue());
+        User user = userService.getUserById(record.getUserId());
         int age = userService.calculateAge(user.getBirthDate());
-        int genderInt = userService.toGenderInt(user.getGender()); // "M"/"F" -> 1/0
+        int genderInt = userService.toGenderInt(user.getGender());
 
         Map<String, Object> body = Map.of(
                 "age", age,
@@ -68,39 +76,34 @@ public class SleepService {
                 "alcohol_consumption", record.getAlcoholConsumption()
         );
 
-        Map<String, Object> resp = webClient.post()
-                .uri("/sleep/predict-fatigue")
-                .bodyValue(body)
-                .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-                .block();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
 
-        if (resp == null) {
-            throw new IllegalStateException("FastAPI returned null for predict-fatigue");
-        }
+        ResponseEntity<Map> response = restTemplate.postForEntity(
+                fastApiBaseUrl + "/sleep/predict-fatigue",
+                request,
+                Map.class
+        );
 
-        // FastAPI 응답 키 이름에 맞춰 매핑
-        // 예: {predicted_sleep_quality: 3.0, predicted_fatigue_score: 33.33, condition_level: "보통"}
-        if (resp.get("predicted_sleep_quality") != null) {
-            record.setPredictedSleepQuality(((Number) resp.get("predicted_sleep_quality")).doubleValue());
-        }
-        if (resp.get("predicted_fatigue_score") != null) {
-            record.setPredictedFatigueScore(((Number) resp.get("predicted_fatigue_score")).doubleValue());
-        }
-        if (resp.get("condition_level") != null) {
-            record.setConditionLevel((String) resp.get("condition_level"));
-        }
+        Map<String, Object> resp = response.getBody();
+        if (resp == null) throw new IllegalStateException("FastAPI returned null");
+
+        record.setPredictedSleepQuality(
+                ((Number) resp.getOrDefault("predicted_sleep_quality", 0)).doubleValue()
+        );
+        record.setPredictedFatigueScore(
+                ((Number) resp.getOrDefault("predicted_fatigue_score", 0)).doubleValue()
+        );
+        record.setConditionLevel((String) resp.getOrDefault("condition_level", "보통"));
 
         record.setUpdatedAt(LocalDateTime.now());
-        return sleepRepository.save(record);
+        return sleepDataRepository.save(record);
     }
 
-    /**
-     * FastAPI: 개인 최적 수면시간 예측 호출 후 daily_activities의 recommended_sleep_range 업데이트
-     * 업데이트되는 컬럼: recommended_sleep_range
-     */
+    /** 4️⃣ 개인 최적 수면시간 예측 **/
     public SleepData updateOptimalSleepRange(SleepData record) {
-        User user = userService.getUserById(record.getUserId().longValue());
+        User user = userService.getUserById(record.getUserId());
         int age = userService.calculateAge(user.getBirthDate());
         int genderInt = userService.toGenderInt(user.getGender());
 
@@ -113,23 +116,31 @@ public class SleepService {
                 "physical_activity_hours", record.getPhysicalActivityHours()
         );
 
-        Map<String, Object> resp = webClient.post()
-                .uri("/sleep/recommend")
-                .bodyValue(body)
-                .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-                .block();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
 
-        if (resp == null) {
-            throw new IllegalStateException("FastAPI returned null for predict-optimal-hours");
-        }
+        ResponseEntity<Map> response = restTemplate.postForEntity(
+                fastApiBaseUrl + "/sleep/recommend",
+                request,
+                Map.class
+        );
 
-        // FastAPI 응답 예: { recommended_sleep_range: "7.0 ~ 7.5 시간" }
-        if (resp.get("recommended_sleep_range") != null) {
-            record.setRecommendedSleepRange((String) resp.get("recommended_sleep_range"));
-        }
+        Map<String, Object> resp = response.getBody();
+        if (resp == null) throw new IllegalStateException("FastAPI returned null");
+
+        record.setRecommendedSleepRange(
+                (String) resp.getOrDefault("recommended_sleep_range", "7시간")
+        );
 
         record.setUpdatedAt(LocalDateTime.now());
-        return sleepRepository.save(record);
+        return sleepDataRepository.save(record);
+    }
+
+    /** 5️⃣ 최근 7일 기록 **/
+    public List<SleepData> getRecentSleepHours(String userId) {
+        List<SleepData> list = sleepDataRepository.findTop7ByUserIdOrderByDateDesc(userId);
+        Collections.reverse(list);
+        return list;
     }
 }

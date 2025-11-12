@@ -1,72 +1,74 @@
-package com.app.medibear.controller;
+package com.example.sleep.controller;
 
-import com.app.medibear.dto.UserInputRequest;
-import com.app.medibear.model.SleepData;  // 네 프로젝트 패키지 맞춰라
-import com.app.medibear.service.SleepService;
-import com.app.medibear.repository.SleepRepository;
-import org.springframework.http.ResponseEntity;
+import com.example.sleep.dto.UserInputRequest;
+import com.example.sleep.model.SleepData;
+import com.example.sleep.service.SleepService;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-@RestController
+import java.time.LocalDate;
+
+@Controller
 @RequestMapping("/sleep")
 public class SleepController {
 
     private final SleepService sleepService;
-    private final SleepRepository sleepRepository;
 
-    public SleepController(SleepService sleepService, SleepRepository sleepRepository) {
+    public SleepController(SleepService sleepService) {
         this.sleepService = sleepService;
-        this.sleepRepository = sleepRepository;
     }
 
-   /** 활동량 입력(하루 1회 제한) **/
+    @GetMapping("/form")
+    public String showForm() {
+        return "sleep/form";
+    }
+
     @PostMapping("/activities")
-    public ResponseEntity<?> saveActivity(@RequestBody UserInputRequest input) {
+    public String saveActivity(@ModelAttribute UserInputRequest input, Model model) {
         try {
             SleepData saved = sleepService.saveInitialRecord(input);
-            return ResponseEntity.ok(saved);
+            sleepService.updateFatiguePrediction(saved);
+            sleepService.updateOptimalSleepRange(saved);
+            model.addAttribute("message", "데이터가 성공적으로 저장되었습니다.");
+            model.addAttribute("record", saved);
         } catch (IllegalStateException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            model.addAttribute("message", e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("서버 오류: " + e.getMessage());
+            model.addAttribute("message", "서버 오류: " + e.getMessage());
         }
+        return "sleep/result";
     }
-    /** 피로도 예측 - 오늘 날짜 데이터 자동 조회 **/
-    @PostMapping("/activities/predict-fatigue")
-    public ResponseEntity<?> predictFatigueToday(@RequestParam("userId") String userId) { // ✅ String으로 변경
+
+    @GetMapping("/predict-fatigue")
+    public String predictFatigue(@RequestParam("userId") String userId, Model model) {
         SleepData todayRecord = sleepService.findTodayRecord(userId, LocalDate.now());
         if (todayRecord == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("오늘 입력된 데이터가 없습니다.");
+            model.addAttribute("message", "오늘 입력된 데이터가 없습니다.");
+            return "sleep/result";
         }
-
         SleepData updated = sleepService.updateFatiguePrediction(todayRecord);
-        return ResponseEntity.ok(updated);
+        model.addAttribute("record", updated);
+        model.addAttribute("message", "피로도 예측이 완료되었습니다.");
+        return "sleep/result";
     }
 
-    /** 수면 시간 예측 - 오늘 날짜 데이터 자동 조회 **/
-    @PostMapping("/activities/predict-sleephours")
-    public ResponseEntity<?> predictSleepHoursToday(@RequestParam("userId") String userId) { // ✅ String으로 변경
+    @GetMapping("/predict-sleephours")
+    public String predictSleepHours(@RequestParam("userId") String userId, Model model) {
         SleepData todayRecord = sleepService.findTodayRecord(userId, LocalDate.now());
         if (todayRecord == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("오늘 입력된 데이터가 없습니다.");
+            model.addAttribute("message", "오늘 입력된 데이터가 없습니다.");
+            return "sleep/result";
         }
-
         SleepData updated = sleepService.updateOptimalSleepRange(todayRecord);
-        return ResponseEntity.ok(updated);
+        model.addAttribute("record", updated);
+        model.addAttribute("message", "수면 시간 예측이 완료되었습니다.");
+        return "sleep/result";
     }
 
-
-    /**
-     * 4) 한 번에: 1차 저장 -> 피로도 예측 -> 수면시간 예측
-     *    프론트에서 한 번에 처리하고 싶을 때 사용
-     */
-    @PostMapping("/activities/full")
-    public ResponseEntity<SleepData> saveAndPredict(@RequestBody UserInputRequest input) {
-        SleepData saved = sleepService.saveInitialRecord(input);
-        saved = sleepService.updateFatiguePrediction(saved);
-        saved = sleepService.updateOptimalSleepRange(saved);
-        return ResponseEntity.ok(saved);
+    @GetMapping("/recent")
+    public String showRecent(@RequestParam("userId") String userId, Model model) {
+        model.addAttribute("list", sleepService.getRecentSleepHours(userId));
+        return "sleep/recent";
     }
 }

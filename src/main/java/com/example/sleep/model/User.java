@@ -1,34 +1,43 @@
-package com.example.sleep.model;
+package com.app.medibear.model;
 
-import jakarta.persistence.*;
-import lombok.*;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "users")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class User {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    private String name;  // VARCHAR(50)
-
-    // 'M' or 'F' 로 저장됨 → char(1)
-    @Column(length = 1)
+    private String id;         //문자열 기반 ID
+    private String name;
     private String gender;
-
-    @Column(name = "birth_date", nullable = false)
     private LocalDate birthDate;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    // getter/setter 정상화
+    public String getId() {
+        return id;
+    }
 
-    private String username;
+    public void setId(String id) {  //String 타입으로 수정
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getGender() {
+        return gender;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
+    }
+
+    public LocalDate getBirthDate() {
+        return birthDate;
+    }
+
+    public void setBirthDate(LocalDate birthDate) {
+        this.birthDate = birthDate;
+    }
 }

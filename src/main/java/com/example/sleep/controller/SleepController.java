@@ -19,36 +19,44 @@ public class SleepController {
         this.sleepRepository = sleepRepository;
     }
 
-    /**
-     * 1) 1차 저장만 수행
-     */
+   /** 활동량 입력(하루 1회 제한) **/
     @PostMapping("/activities")
-    public ResponseEntity<SleepData> saveActivity(@RequestBody UserInputRequest input) {
-        SleepData saved = sleepService.saveInitialRecord(input);
-        return ResponseEntity.ok(saved);
+    public ResponseEntity<?> saveActivity(@RequestBody UserInputRequest input) {
+        try {
+            SleepData saved = sleepService.saveInitialRecord(input);
+            return ResponseEntity.ok(saved);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("서버 오류: " + e.getMessage());
+        }
     }
+    /** 피로도 예측 - 오늘 날짜 데이터 자동 조회 **/
+    @PostMapping("/activities/predict-fatigue")
+    public ResponseEntity<?> predictFatigueToday(@RequestParam("userId") String userId) { // ✅ String으로 변경
+        SleepData todayRecord = sleepService.findTodayRecord(userId, LocalDate.now());
+        if (todayRecord == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("오늘 입력된 데이터가 없습니다.");
+        }
 
-    /**
-     * 2) 피로도 예측만 수행 (이미 저장된 레코드 ID 필요)
-     */
-    @PostMapping("/activities/{id}/predict-fatigue")
-    public ResponseEntity<SleepData> predictFatigue(@PathVariable("id") Long id) {
-        SleepData record = sleepRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Record not found: " + id));
-        SleepData updated = sleepService.updateFatiguePrediction(record);
+        SleepData updated = sleepService.updateFatiguePrediction(todayRecord);
         return ResponseEntity.ok(updated);
     }
 
-    /**
-     * 3) 개인 최적 수면시간 예측만 수행 (이미 저장된 레코드 ID 필요)
-     */
-    @PostMapping("/activities/{id}/predict-sleephours")
-    public ResponseEntity<SleepData> predictOptimal(@PathVariable ("id") Long id) {
-        SleepData record = sleepRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Record not found: " + id));
-        SleepData updated = sleepService.updateOptimalSleepRange(record);
+    /** 수면 시간 예측 - 오늘 날짜 데이터 자동 조회 **/
+    @PostMapping("/activities/predict-sleephours")
+    public ResponseEntity<?> predictSleepHoursToday(@RequestParam("userId") String userId) { // ✅ String으로 변경
+        SleepData todayRecord = sleepService.findTodayRecord(userId, LocalDate.now());
+        if (todayRecord == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("오늘 입력된 데이터가 없습니다.");
+        }
+
+        SleepData updated = sleepService.updateOptimalSleepRange(todayRecord);
         return ResponseEntity.ok(updated);
     }
+
 
     /**
      * 4) 한 번에: 1차 저장 -> 피로도 예측 -> 수면시간 예측

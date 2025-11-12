@@ -1,5 +1,6 @@
 package com.app.medibear.controller;
 
+import com.app.medibear.dto.UserInputRequest;
 import com.app.medibear.model.SleepData;  // 네 프로젝트 패키지 맞춰라
 import com.app.medibear.service.SleepService;
 import com.app.medibear.repository.SleepRepository;

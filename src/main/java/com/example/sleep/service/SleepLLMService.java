@@ -18,7 +18,6 @@ public class SleepLLMService {
         this.baseUrl = baseUrl;
     }
 
-    /** 일반 대화 */
     public String chatGeneral(Long memberNo, String message) {
         String url = baseUrl + "/sleepchat/message";
 
@@ -40,7 +39,6 @@ public class SleepLLMService {
         return response.getBody().get("response").toString();
     }
 
-    /** 일간 리포트 */
     public String getDailyReport(Long memberNo) {
         String url = baseUrl + "/sleepchat/report/daily/" + memberNo;
 
@@ -52,7 +50,6 @@ public class SleepLLMService {
         return response.getBody().get("report").toString();
     }
 
-    /** 주간 리포트 */
     public String getWeeklyReport(Long memberNo) {
         String url = baseUrl + "/sleepchat/report/weekly/" + memberNo;
 
@@ -64,7 +61,6 @@ public class SleepLLMService {
         return response.getBody().get("report").toString();
     }
 
-    /** 대화 기록 */
     public Map<String, Object> getChatHistory(Long memberNo) {
         String url = baseUrl + "/sleepchat/history/" + memberNo;
 

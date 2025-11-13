@@ -1,11 +1,12 @@
 package com.example.sleep.controller;
 
 import com.example.sleep.service.SleepLLMService;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@Controller
+import java.util.Map;
+
+@RestController
 @RequestMapping("/chat")
 public class SleepChatController {
 
@@ -15,44 +16,30 @@ public class SleepChatController {
         this.llmService = llmService;
     }
 
-    /** 채팅 입력 폼 */
-    @GetMapping("/form")
-    public String chatForm() {
-        return "chat/form";
-    }
-
-    /** 일반 대화 요청 */
     @PostMapping("/message")
-    public String chat(@RequestParam("member_no") Long memberNo,
-                       @RequestParam("message") String message,
-                       Model model) {
+    public ResponseEntity<Map<String, Object>> chat(@RequestBody Map<String, Object> body) {
+        Long memberNo = Long.valueOf(body.get("memberNo").toString());
+        String message = (String) body.get("message");
+
         String response = llmService.chatGeneral(memberNo, message);
-        model.addAttribute("memberNo", memberNo);
-        model.addAttribute("message", message);
-        model.addAttribute("response", response);
-        return "chat/result";
+        return ResponseEntity.ok(Map.of("response", response));
     }
 
-    /** 일간 리포트 */
     @GetMapping("/report/daily/{memberNo}")
-    public String dailyReport(@PathVariable Long memberNo, Model model) {
+    public ResponseEntity<Map<String, Object>> dailyReport(@PathVariable("memberNo") Long memberNo) {
         String report = llmService.getDailyReport(memberNo);
-        model.addAttribute("report", report);
-        return "chat/dailyReport";
+        return ResponseEntity.ok(Map.of("report", report));
     }
 
-    /** 주간 리포트 */
     @GetMapping("/report/weekly/{memberNo}")
-    public String weeklyReport(@PathVariable Long memberNo, Model model) {
+    public ResponseEntity<Map<String, Object>> weeklyReport(@PathVariable("memberNo") Long memberNo) {
         String report = llmService.getWeeklyReport(memberNo);
-        model.addAttribute("report", report);
-        return "chat/weeklyReport";
+        return ResponseEntity.ok(Map.of("report", report));
     }
 
-    /** 대화 기록 */
     @GetMapping("/history/{memberNo}")
-    public String history(@PathVariable Long memberNo, Model model) {
-        model.addAttribute("history", llmService.getChatHistory(memberNo));
-        return "chat/history";
+    public ResponseEntity<Map<String, Object>> history(@PathVariable("memberNo") Long memberNo) {
+        Map<String, Object> history = llmService.getChatHistory(memberNo);
+        return ResponseEntity.ok(history);
     }
 }

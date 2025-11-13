@@ -32,7 +32,6 @@ public class SleepService {
         this.fastApiBaseUrl = fastApiBaseUrl;
     }
 
-    /** 1️⃣ 활동 데이터 저장 (하루 1회 제한) **/
     public SleepData saveInitialRecord(UserInputRequest input) {
         Long memberNo = input.getMemberNo();
         LocalDate today = LocalDate.now();
@@ -55,12 +54,10 @@ public class SleepService {
         return sleepDataRepository.save(record);
     }
 
-    /** 2️⃣ 오늘 데이터 조회 **/
     public SleepData findTodayRecord(Long memberNo, LocalDate date) {
         return sleepDataRepository.findByMemberNoAndDate(memberNo, date).orElse(null);
     }
 
-    /** 3️⃣ 피로도 예측 **/
     public SleepData updateFatiguePrediction(SleepData record) {
         User user = userService.getUserById(record.getMemberNo());
         int age = userService.calculateAge(user.getBirthDate());
@@ -100,7 +97,6 @@ public class SleepService {
         return sleepDataRepository.save(record);
     }
 
-    /** 4️⃣ 개인 최적 수면시간 예측 **/
     public SleepData updateOptimalSleepRange(SleepData record) {
         User user = userService.getUserById(record.getMemberNo());
         int age = userService.calculateAge(user.getBirthDate());
@@ -136,7 +132,6 @@ public class SleepService {
         return sleepDataRepository.save(record);
     }
 
-    /** 5️⃣ 최근 7일 기록 **/
     public List<SleepData> getRecentSleepHours(Long memberNo) {
         List<SleepData> list = sleepDataRepository.findTop7ByMemberNoOrderByDateDesc(memberNo);
         Collections.reverse(list);

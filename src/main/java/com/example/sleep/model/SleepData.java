@@ -5,14 +5,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "daily_activities_tb")  // ✅ 실제 테이블명 반영
+@Table(name = "daily_activities_tb")
 public class SleepData {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // PK
+    private Long id;
 
-    /** 회원 번호 (FK) */
     @Column(name = "member_no", nullable = false)
     private Long memberNo;
 
@@ -53,8 +52,6 @@ public class SleepData {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
-
-    // ✅ Getter / Setter 전체 정의
 
     public Long getId() {
         return id;

@@ -5,8 +5,13 @@ spring:
   application:
     name: sleep-spring
 
+  mvc:
+    view:
+      prefix: /WEB-INF/views/
+      suffix: .jsp
+
   datasource:
-    url: jdbc:postgresql://localhost:5432/sleepdb
+    url: jdbc:postgresql://localhost:5432/ai_healthcare
     username: postgres
     password: "0411"
     driver-class-name: org.postgresql.Driver
@@ -20,6 +25,5 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
-# FastAPI 서버 연결 설정
 fastapi:
   base-url: http://127.0.0.1:8000

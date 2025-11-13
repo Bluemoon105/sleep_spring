@@ -3,13 +3,14 @@ package com.example.sleep.controller;
 import com.example.sleep.dto.UserInputRequest;
 import com.example.sleep.model.SleepData;
 import com.example.sleep.service.SleepService;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.time.LocalDate;
+import java.util.List;
 
-@Controller
+@RestController
 @RequestMapping("/sleep")
 public class SleepController {
 
@@ -19,61 +20,56 @@ public class SleepController {
         this.sleepService = sleepService;
     }
 
-    /** 활동 데이터 입력 폼 */
-    @GetMapping("/form")
-    public String showForm() {
-        return "sleep/form";
-    }
-
-    /** 활동량 저장 */
+    /** 활동량 입력 **/
     @PostMapping("/activities")
-    public String saveActivity(@ModelAttribute UserInputRequest input, Model model) {
+    public ResponseEntity<?> saveActivity(@RequestBody UserInputRequest input) {
         try {
             SleepData saved = sleepService.saveInitialRecord(input);
             sleepService.updateFatiguePrediction(saved);
             sleepService.updateOptimalSleepRange(saved);
-            model.addAttribute("message", "데이터가 성공적으로 저장되었습니다.");
-            model.addAttribute("record", saved);
+
+            return ResponseEntity.ok(
+                    new ApiResponse("데이터가 성공적으로 저장되었습니다.", saved)
+            );
+
         } catch (IllegalStateException e) {
-            model.addAttribute("message", e.getMessage());
+            // 오늘 기록 이미 존재
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse(e.getMessage(), null));
+
         } catch (Exception e) {
-            model.addAttribute("message", "서버 오류: " + e.getMessage());
+            // 기타 에러
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse("서버 오류: " + e.getMessage(), null));
         }
-        return "sleep/result";
     }
 
-    /** 피로도 예측 */
+
     @GetMapping("/predict-fatigue")
-    public String predictFatigue(@RequestParam("member_no") Long memberNo, Model model) {
+    public Object predictFatigue(@RequestParam("memberNo") Long memberNo) {
         SleepData todayRecord = sleepService.findTodayRecord(memberNo, LocalDate.now());
         if (todayRecord == null) {
-            model.addAttribute("message", "오늘 입력된 데이터가 없습니다.");
-            return "sleep/result";
+            return new ApiResponse("오늘 입력된 데이터가 없습니다.", null);
         }
         SleepData updated = sleepService.updateFatiguePrediction(todayRecord);
-        model.addAttribute("record", updated);
-        model.addAttribute("message", "피로도 예측이 완료되었습니다.");
-        return "sleep/result";
+        return new ApiResponse("피로도 예측이 완료되었습니다.", updated);
     }
 
-    /** 최적 수면시간 예측 */
     @GetMapping("/predict-sleephours")
-    public String predictSleepHours(@RequestParam("member_no") Long memberNo, Model model) {
+    public Object predictSleepHours(@RequestParam("memberNo") Long memberNo) {
         SleepData todayRecord = sleepService.findTodayRecord(memberNo, LocalDate.now());
         if (todayRecord == null) {
-            model.addAttribute("message", "오늘 입력된 데이터가 없습니다.");
-            return "sleep/result";
+            return new ApiResponse("오늘 입력된 데이터가 없습니다.", null);
         }
         SleepData updated = sleepService.updateOptimalSleepRange(todayRecord);
-        model.addAttribute("record", updated);
-        model.addAttribute("message", "수면 시간 예측이 완료되었습니다.");
-        return "sleep/result";
+        return new ApiResponse("수면 시간 예측이 완료되었습니다.", updated);
     }
 
-    /** 최근 7일 기록 조회 */
     @GetMapping("/recent")
-    public String showRecent(@RequestParam("member_no") Long memberNo, Model model) {
-        model.addAttribute("list", sleepService.getRecentSleepHours(memberNo));
-        return "sleep/recent";
+    public Object showRecent(@RequestParam("memberNo") Long memberNo) {
+        List<SleepData> list = sleepService.getRecentSleepHours(memberNo);
+        return new ApiResponse("최근 7일 데이터 조회 완료", list);
     }
+
+    record ApiResponse(String message, Object data) {}
 }

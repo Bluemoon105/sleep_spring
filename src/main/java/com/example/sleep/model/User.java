@@ -11,7 +11,7 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "member_no")
-    private Long memberNo; // PK
+    private Long memberNo;
 
     @Column(nullable = false, length = 256)
     private String email;
@@ -35,15 +35,12 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
 
-    // ✅ enum 타입 정의
     public enum Gender {
         M, F
     }
 
-    // ✅ 기본 생성자
     public User() {}
 
-    // ✅ Getter / Setter
     public Long getMemberNo() {
         return memberNo;
     }
@@ -108,4 +105,3 @@ public class User {
         this.updatedAt = updatedAt;
     }
 }
-
